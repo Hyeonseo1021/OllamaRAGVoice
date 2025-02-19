@@ -1,0 +1,51 @@
+/* 🌟 전체 컨테이너: 화면 정중앙 정렬 */
+.page {
+  --gray-rgb: 0, 0, 0;
+  --gray-alpha-200: rgba(var(--gray-rgb), 0.08);
+  --gray-alpha-100: rgba(var(--gray-rgb), 0.05);
+
+  --button-primary-hover: #383838;
+  --button-secondary-hover: #f2f2f2;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 80vh;  /* ✅ 화면 전체 높이 */
+  min-height: 100svh;
+  padding: 40px;
+  gap: 32px;
+  font-family: var(--font-geist-sans);
+  background: linear-gradient(to bottom, #f0f0f0, #e0e0e0); /* ✅ 부드러운 배경 */
+}
+
+/* 🌟 메인 컨텐츠 중앙 정렬 */
+.main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 24px;
+}
+
+/* 🌟 제목 스타일 */
+.main h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #333;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 🌟 푸터 스타일 */
+.footer {
+  position: absolute;
+  bottom: 16px;
+  font-size: 14px;
+  color: #777;
+}
+
+@media (prefers-color-scheme: dark) {
+  .footer {
+    color: #aaa;
+  }
+}
