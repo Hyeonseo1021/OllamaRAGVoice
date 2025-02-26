@@ -10,7 +10,6 @@ from sentence_transformers import SentenceTransformer
 # ✅ 모델을 벡터 저장할 때와 동일하게 설정
 embedding_model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
 
-
 # 🔹 ChromaDB 클라이언트 설정
 chroma_client = chromadb.HttpClient(host="localhost", port=8000)
 collection = chroma_client.get_or_create_collection(name="documents")
@@ -34,7 +33,6 @@ def should_apply_rag(query: str, top_k_final: int = 20, threshold: float = 0.7, 
     print("\n🔍 검색된 문서 및 유사도 점수:")
 
     for doc, score, meta in zip(retrieved_docs, retrieved_scores, retrieved_metadata):
-        # scaling factor 적용 후 L2 distance를 지수 감쇠 함수로 similarity로 변환
         similarity = math.exp(-score / scale)
         similarity = clip(similarity, 0, 1)  # 값이 0~1 범위를 벗어나지 않도록 보정
 

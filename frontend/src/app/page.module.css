@@ -16,7 +16,7 @@
   padding: 40px;
   gap: 32px;
   font-family: var(--font-geist-sans);
-  background: linear-gradient(to bottom, #f0f0f0, #e0e0e0); /* ✅ 부드러운 배경 */
+  background: linear-gradient(to bottom, #c7e2ce, #b0f3a7); /* ✅ 부드러운 배경 */
 }
 
 /* 🌟 메인 컨텐츠 중앙 정렬 */
@@ -42,6 +42,114 @@
   bottom: 16px;
   font-size: 14px;
   color: #777;
+}
+
+/* ✅ 사이드바 기본 스타일 */
+.sidebar {
+  position: fixed;
+  left: -260px; /* 기본적으로 숨김 */
+  top: 0;
+  width: 250px;
+  height: 100vh;
+  background-color: #ffffff;
+  box-shadow: 2px 0px 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease-in-out;
+  padding: 20px;
+  overflow-y: auto;
+  z-index: 1000;
+  border-right: 3px solid #4caf50; /* ✅ 강조된 사이드바 테두리 */
+}
+
+/* ✅ 사이드바 열렸을 때 */
+.sidebar.open {
+  left: 0;
+}
+
+/* ✅ 사이드바 헤더 */
+.sidebarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.sidebarHeader h3 {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* ✅ 사이드바 닫기 버튼 */
+.sidebarClose {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #777;
+  transition: color 0.3s ease;
+}
+
+.sidebarClose:hover {
+  color: #4caf50;
+}
+
+/* ✅ 사이드바 파일 목록 */
+.fileList {
+  margin-top: 50px;
+  padding: 10px;
+}
+
+.fileList h2 {
+  font-size: 16px;
+  font-weight: bold;
+  color: #444;
+  margin-bottom: 10px;
+}
+
+.fileList ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.fileList li {
+  background-color: #f9f9f9;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s;
+}
+
+.fileList li:hover {
+  transform: translateX(5px);
+  background-color: #e8f5e9;
+}
+
+/* ✅ 사이드바 토글 버튼 */
+.sidebarToggle {
+  position: fixed;
+  left: 10px;
+  top: 20px;
+  width: 50px;
+  height: 50px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebarToggle:hover {
+  background-color: #45a049;
 }
 
 @media (prefers-color-scheme: dark) {

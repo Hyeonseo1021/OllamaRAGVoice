@@ -1,132 +1,239 @@
-/* 전체 컨테이너 */
+/* ✅ 전체 컨테이너 크기 확장 */
 .chatContainer {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 16px;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    background: #ffffff;
-  }
-  
-  /* 헤더 */
-  .chatHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #ddd;
-  }
-  
-  .chatHeader h2 {
-    font-size: 20px;
-    font-weight: bold;
-    color: #333;
-  }
-  
-  /* 대화 기록 영역 */
-  .chatHistory {
-    height: 400px;
-    overflow-y: auto;
-    padding: 12px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-  }
-  
-  /* 메시지 공통 스타일 */
-  .message {
-    padding: 12px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    font-size: 16px;
-    line-height: 1.5;
-    max-width: 80%;
-    word-wrap: break-word;
-  }
-  
-  /* 사용자 메시지 */
-  .userMessage {
-    background-color: #d1e7fd;
-    color: #084298;
-    text-align: right;
-    margin-left: auto;
-  }
-  
-  /* 챗봇 메시지 */
-  .botMessage {
-    background-color: #e9ecef;
-    color: #333;
-    text-align: left;
-    margin-right: auto;
-  }
-  
-  /* 입력창 컨테이너 */
-  .inputContainer {
-    display: flex;
-    margin-top: 12px;
-    gap: 10px;
-  }
-  
-  /* 입력 필드 */
-  .inputBox {
-    flex-grow: 1;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-  }
-  
-  /* 버튼 공통 스타일 */
-  .sendButton,
-  .clearButton {
-    padding: 12px 16px;
-    font-size: 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-  }
-  
-  /* 전송 버튼 */
-  .sendButton {
-    background-color: #007bff;
-    color: white;
-    border: none;
-  }
-  
-  .sendButton:hover {
-    background-color: #0056b3;
-  }
-  
-  /* 대화 삭제 버튼 */
-  .clearButton {
-    background-color: #dc3545;
-    color: white;
-    border: none;
-  }
-  
-  .clearButton:hover {
-    background-color: #a71d2a;
-  }
-  
-  .sttButton {
-    padding: 10px;
-    font-size: 16px;
-    border: none;
-    border-radius: 8px;
-    background-color: #4caf50;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-left: 10px;
-  }
-  
-  .sttButton:hover {
-    background-color: #45a049;
-  }
-  
-  .sttButton:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
-  
+  width: 800px; /* ✅ 기존 800px → 1000px로 확장 */
+  margin: 20px auto;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+}
+
+/* ✅ 헤더 (RAG 버튼을 오른쪽으로 이동) */
+.chatHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+
+.chatHeader h2 {
+  font-size: 22px;
+  font-weight: bold;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 530px; /* ✅ RAG 버튼과 간격 추가 */
+}
+
+/* ✅ RAG 토글 버튼을 채팅 제목 옆에 배치 */
+.ragToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ✅ 토글 스위치 스타일 */
+.toggleSwitch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggleSwitch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 24px;
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* ✅ 채팅 내역 높이 확장 */
+.chatHistory {
+  height: 500px; /* ✅ 기존 400px → 500px로 확장 */
+  overflow-y: auto;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+/* 메시지 공통 스타일 */
+.message {
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  font-size: 16px;
+  line-height: 1.5;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+/* 사용자 메시지 */
+.userMessage {
+  background-color: #d1e7fd;
+  color: #084298;
+  text-align: right;
+  margin-left: auto;
+}
+
+/* 챗봇 메시지 */
+.botMessage {
+  background-color: #e9ecef;
+  color: #333;
+  text-align: left;
+  margin-right: auto;
+}
+
+/* ✅ 입력창 컨테이너 (정렬 맞춤) */
+.inputContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* ✅ 입력 필드 (디자인 개선) */
+.inputBox {
+  flex-grow: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+/* 버튼 공통 스타일 */
+.sendButton,
+.clearButton {
+  padding: 12px 16px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+/* 전송 버튼 */
+.sendButton {
+  background-color: #007bff;
+  color: white;
+  border: none;
+}
+
+.sendButton:hover {
+  background-color: #0056b3;
+}
+
+/* 대화 삭제 버튼 */
+.clearButton {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+}
+
+.clearButton:hover {
+  background-color: #a71d2a;
+}
+
+.sttButton {
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: #4caf50;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-left: 10px;
+}
+
+.sttButton:hover {
+  background-color: #45a049;
+}
+
+.sttButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+
+/* ✅ 파일 업로드 컨테이너 (중앙 정렬) */
+.uploadContainer {
+  display: flex;
+  justify-content: center; /* 중앙 정렬 */
+  align-items: center;
+  gap: 12px; /* 버튼 간 간격 */
+  margin-top: 12px;
+}
+
+.fileInput {
+  display: none;
+}
+
+/* ✅ 파일 선택 버튼 */
+.fileLabel {
+  background-color: #f0f0f0;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fileLabel:hover {
+  background-color: #e0e0e0;
+}
+
+/* ✅ 업로드 버튼 */
+.uploadButton {
+  background-color: #ff9800; /* 주황색 */
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.uploadButton:hover {
+  background-color: #e68900;
+  transform: scale(1.05);
+}

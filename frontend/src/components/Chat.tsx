@@ -10,6 +10,9 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false); // STT 상태
   const [recognition, setRecognition] = useState<any | null>(null); // STT 객체 상태
+  const [file, setFile] = useState<File | null>(null); // 파일 상태
+  const [useRAG, setUseRAG] = useState(false); // ✅ RAG 버튼 상태 추가
+  const [hasMessages, setHasMessages] = useState(false); // 채팅 시작 여부 상태 추가
 
   // ✅ STT 초기화 (Web Speech API)
   useEffect(() => {
@@ -20,18 +23,9 @@ export default function Chat() {
       recog.lang = "ko-KR";
       recog.interimResults = false;
 
-      recog.onstart = () => {
-        setIsListening(true);
-      };
-
-      recog.onend = () => {
-        setIsListening(false);
-      };
-
-      recog.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setInput(transcript); // 입력창에 텍스트 업데이트
-      };
+      recog.onstart = () => setIsListening(true);
+      recog.onend = () => setIsListening(false);
+      recog.onresult = (event: any) => setInput(event.results[0][0].transcript); // STT 결과
 
       setRecognition(recog);
     } else {
@@ -54,14 +48,18 @@ export default function Chat() {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
+    if (!hasMessages) setHasMessages(true);
+
     const newMessages = [...messages, { role: "user", content: input }];
+    
     setMessages(newMessages);
     setInput("");
     setIsLoading(true);
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/chat", {
+      const response = await axios.post("http://localhost:7000/chat", {
         message: input,
+        use_rag: useRAG
       });
 
       const updatedMessages = [
@@ -69,13 +67,11 @@ export default function Chat() {
         { role: "assistant", content: response.data.response },
       ];
       setMessages(updatedMessages);
-
-      // TTS로 챗봇 응답 읽어주기
-      speak(response.data.response);
+      speak(response.data.response); // TTS로 챗봇 응답 읽어주기
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
-      setIsLoading(false);  // ✅ 응답 생성 완료 후 로딩 상태 해제
+      setIsLoading(false);
     }
   };
 
@@ -88,11 +84,47 @@ export default function Chat() {
     }
   };
 
+  // ✅ 파일 업로드 함수
+  const uploadFile = async () => {
+    if (!file) return alert("파일을 선택하세요!");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await axios.post("http://localhost:7000/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      alert(response.data.message); // 업로드 완료 메시지
+      setFile(null); // 파일 상태 초기화
+    } catch (error) {
+      console.error("파일 업로드 오류:", error);
+    }
+  };
+
   return (
-    <div className={styles.chatContainer}>
+    <div className={`${styles.chatContainer} ${hasMessages ? styles.chatActive : ""}`}>
+      {!hasMessages}
       <div className={styles.chatHeader}>
-        <h2>채팅</h2>
+        <h2>질문하세요</h2>
+           {/* ✅ RAG 버튼을 제목 옆으로 이동 */}
+            <div className={styles.ragToggle}>
+              <span className={styles.toggleLabel}>
+                {useRAG ? "📚 RAG" : "🧠 일반"}
+              </span>
+              <label className={styles.toggleSwitch}>
+                <input
+                  type="checkbox"
+                  checked={useRAG}
+                  onChange={(e) => setUseRAG(e.target.checked)}
+                />
+                <span className={styles.slider}></span>
+              </label>
+            </div>
       </div>
+
+      {/* 채팅 기록 표시 */}
       <div className={styles.chatHistory}>
         {messages.map((msg, index) => (
           <div
@@ -106,7 +138,9 @@ export default function Chat() {
         ))}
         {isLoading && <div className={styles.loadingMessage}>⏳ 응답 생성 중...</div>}
       </div>
-      <div className={styles.inputContainer}>
+
+      {/* 입력 및 버튼 영역 */}
+      <div className={`${styles.inputContainer} ${hasMessages ? styles.inputFixed : styles.inputCenter}`}>
         <input
           type="text"
           className={styles.inputBox}
@@ -121,6 +155,20 @@ export default function Chat() {
           {isListening ? "Listening..." : "🎙️"}
         </button>
       </div>
+
+        {/* ✅ 파일 업로드 */}
+        <div className={styles.uploadContainer}>
+          <label htmlFor="file-upload" className={styles.fileLabel}>📂 파일 선택</label>
+          <input
+            id="file-upload"
+            type="file"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            className={styles.fileInput}
+          />
+          <button onClick={uploadFile} className={`${styles.button} ${styles.uploadButton}`} disabled={!file}>
+            업로드
+          </button>
+        </div>
     </div>
   );
 }

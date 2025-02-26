@@ -1,13 +1,26 @@
+"use client";
+
+import { useState } from "react";
 import styles from "./page.module.css";
 import Chat from "@/components/Chat";
+import List from "@/components/List"; // ✅ List 컴포넌트 추가
 
 export default function Home() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   return (
     <div className={styles.page}>
+      <div className={`${styles.sidebar} ${isSidebarOpen ? styles.open : ""}`}>
+        <button className={styles.sidebarToggle} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+          {isSidebarOpen ? "⬅" : "📂"}
+        </button>
+        {isSidebarOpen && (
+          <div className={styles.fileList}>
+            <List /> {/* ✅ 파일 목록 컴포넌트 추가 */}
+          </div>
+        )}
+      </div>
       {/* 메인 섹션 */}
       <div className={styles.main}>
-        <h1>🗣️ 올라마 챗봇</h1>
-
         {/* Chat 컴포넌트 */}
         <div id="chat" className="mt-8 w-full">
           <Chat />
@@ -16,7 +29,7 @@ export default function Home() {
 
       {/* 푸터 */}
       <footer className={styles.footer}>
-        © 2025 Olama Chatbot. All rights reserved.
+        © 2025 OlLama Chatbot. All rights reserved.
       </footer>
     </div>
   );

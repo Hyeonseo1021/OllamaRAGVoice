@@ -28,8 +28,6 @@ app.add_middleware(
 chroma_client = chromadb.HttpClient(host="localhost", port=8000)
 collection = chroma_client.get_or_create_collection(name="documents")
 
-from pydantic import BaseModel
-
 class ChatRequest(BaseModel):
     message: str
     use_rag: bool  # ✅ RAG 버튼 여부 추가

@@ -1,0 +1,45 @@
+# ✅ 공통 (Next.js + FastAPI 공통)
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+*.swp
+
+# ✅ Next.js 관련
+node_modules/
+.next/
+out/
+dist/
+.vercel/
+.cache/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ✅ FastAPI 관련 (Python)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+venv/
+Pipfile
+Pipfile.lock
+poetry.lock
+
+# ✅ ChromaDB 관련
+chroma_db/   # ChromaDB의 기본 데이터 폴더
+chroma_db/*  # 내부 데이터까지 제외
+
+# ✅ 데이터베이스 관련 (SQLite, PostgreSQL 등)
+*.db
+*.sqlite3
+*.sqlite
+migrations/
+
+# ✅ Docker 관련 (Docker 사용 시)
+docker-compose.override.yml
+.dockerignore
