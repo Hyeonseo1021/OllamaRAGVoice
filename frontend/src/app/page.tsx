@@ -11,7 +11,7 @@ export default function Home() {
     <div className={styles.page}>
       <div className={`${styles.sidebar} ${isSidebarOpen ? styles.open : ""}`}>
         <button className={styles.sidebarToggle} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-          {isSidebarOpen ? "⬅" : "📂"}
+          {isSidebarOpen ? "⬅" : "📄"}
         </button>
         {isSidebarOpen && (
           <div className={styles.fileList}>

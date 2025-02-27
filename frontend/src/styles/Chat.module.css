@@ -1,13 +1,21 @@
 /* ✅ 전체 컨테이너 크기 확장 */
 .chatContainer {
-  width: 800px; /* ✅ 기존 800px → 1000px로 확장 */
-  margin: 20px auto;
+  width: 800px;
+  max-width: 1000px;
+  min-height: 150px; /* ✅ 채팅 시작 전 최소 높이 */
+  margin: 0 auto;
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  transition: height 0.5s ease-in-out;
 }
 
+.chatActive .chatContainer {
+  height: 100vh;
+}
 /* ✅ 헤더 (RAG 버튼을 오른쪽으로 이동) */
 .chatHeader {
   display: flex;
@@ -81,13 +89,20 @@ input:checked + .slider:before {
 
 /* ✅ 채팅 내역 높이 확장 */
 .chatHistory {
-  height: 500px; /* ✅ 기존 400px → 500px로 확장 */
+  display: none; /* ✅ 기본적으로 숨김 */
+  height: 500px;
   overflow-y: auto;
   padding: 12px;
   background-color: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #ddd;
 }
+
+/* ✅ 메시지가 있을 때만 표시 */
+.chatActive .chatHistory {
+  display: block;
+}
+
 
 /* 메시지 공통 스타일 */
 .message {
@@ -118,13 +133,32 @@ input:checked + .slider:before {
 
 /* ✅ 입력창 컨테이너 (정렬 맞춤) */
 .inputContainer {
+  position: absolute;
+  top: 53.3%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 800px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 10px;
+  background: white;
+  padding: 12px;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.5s ease-in-out;
+  gap: 10px;
 }
 
-/* ✅ 입력 필드 (디자인 개선) */
+/* ✅ 채팅 시작 후 입력창을 하단으로 이동 */
+.chatActive .inputContainer {
+  position: fixed;
+  bottom: 20px;
+  top: auto;
+  transform: translateX(-50%);
+}
+
+
+/* ✅ 입력 필드 */
 .inputBox {
   flex-grow: 1;
   padding: 12px;
@@ -194,7 +228,7 @@ input:checked + .slider:before {
   justify-content: center; /* 중앙 정렬 */
   align-items: center;
   gap: 12px; /* 버튼 간 간격 */
-  margin-top: 12px;
+  padding: 12px;
 }
 
 .fileInput {
