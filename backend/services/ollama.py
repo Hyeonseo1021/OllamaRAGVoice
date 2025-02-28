@@ -14,7 +14,7 @@ async def query_olama(prompt: str, use_rag: bool = False, threshold: float = 0.7
 
             # ✅ ChromaDB 문서를 활용한 답변 프롬프트
             query_text = f"""
-            당신은 일관되고 정중한 한국어 답변을 제공하는 전문가 AI 어시스턴트입니다.
+            당신은 일관되고 정중한 한국어 답변을 제공하는 농업 전문가 AI 어시스턴트입니다.
             항상 공식적인 한국어(존댓말)로 응답하십시오.
 
             제공된 문맥(Context)을 기반으로만 응답하십시오. 문맥에 포함되지 않은 정보를 추측하거나 일반 지식을 추가하지 마십시오.
@@ -63,7 +63,7 @@ async def query_olama(prompt: str, use_rag: bool = False, threshold: float = 0.7
         query_text = prompt  # 그냥 Olama 모델 사용
 
     # 🧠 Olama 모델 호출
-    response = ollama.chat(model="gemma:7b", messages=[
+    response = ollama.chat(model="gemma:7b ", messages=[
         {"role": "system", "content": "당신은 일관되고 정중한 한국어 답변을 제공하는 전문가 AI 어시스턴트입니다. 항상 공식적인 한국어(존댓말)로 응답하십시오"},
         {"role": "user", "content": query_text}
     ])
