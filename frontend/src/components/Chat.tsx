@@ -38,7 +38,7 @@ export default function Chat() {
   const speak = (text: string) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
+      utterance.lang = "ko-KR";
       window.speechSynthesis.speak(utterance);
     } else {
       console.error("Speech Synthesis API not supported in this browser.");

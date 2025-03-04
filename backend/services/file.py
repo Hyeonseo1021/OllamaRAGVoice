@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+import io
 from fastapi import UploadFile, HTTPException
 from .extraction import extract_text, calculate_file_hash
 from langchain.text_splitter import CharacterTextSplitter
@@ -71,9 +72,9 @@ def process_data_file(file_content: bytes, file_ext: str):
     docs = []
     
     if file_ext == "csv":
-        df = pd.read_csv(pd.io.common.BytesIO(file_content))
+        df = pd.read_csv(io.common.BytesIO(file_content))
     elif file_ext == "xlsx":
-        df = pd.read_excel(pd.io.BytesIO(file_content))
+        df = pd.read_excel(io.BytesIO(file_content))
     elif file_ext == "json":
         data = json.loads(file_content.decode("utf-8"))
         df = pd.DataFrame(data)

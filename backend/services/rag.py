@@ -15,7 +15,7 @@ chroma_client = chromadb.HttpClient(host="localhost", port=8000)
 collection = chroma_client.get_or_create_collection(name="documents")
 
 # ✅ 1. 특정 질문에 대해서만 RAG 적용 여부 판단 
-def should_apply_rag(query: str, top_k_final: int = 20, threshold: float = 0.6):
+def should_apply_rag(query: str, top_k_final: int = 20, threshold: float = 0.7):
     """ 특정 질문에 대해 RAG 적용 여부 판단 (L2 Distance 정규화 + 유사도 변환 개선) """
 
     # ✅ L2 Distance 기반으로 정규화 없이 임베딩 생성
