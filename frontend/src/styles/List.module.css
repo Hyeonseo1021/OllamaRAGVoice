@@ -1,0 +1,52 @@
+/* 📂 파일 목록 스타일 */
+.fileList {
+    width: 100%;
+    max-width: 600px;
+    padding: 10px;
+  }
+  
+  .fileList h2 {
+    font-size: 16px;
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 10px;
+  }
+  
+  .fileList ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .fileList li {
+    background-color: #f9f9f9;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: transform 0.2s;
+  }
+  
+  .fileList li:hover {
+    transform: translateX(5px);
+    background-color: #e8f5e9;
+  }
+  
+  /* 🗑️ 삭제 버튼 스타일 */
+  .deleteButton {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  
+  .deleteButton:hover {
+    background-color: #cc0000;
+  }
+  

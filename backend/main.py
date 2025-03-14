@@ -76,6 +76,29 @@ async def get_uploaded_files():
         print(f"❌ 파일 목록 조회 오류: {e}")
         return {"error": "파일 목록을 가져오는 중 오류 발생"}
 
+@app.delete("/delete/document")
+async def delete_document(filename: str):
+    """📂 ChromaDB에서 특정 문서 삭제"""
+    try:
+        # ✅ documents 컬렉션에서 삭제
+        collection_documents.delete(where={"filename": filename})
+        print(f"🗑 문서 삭제 완료: {filename}")
+        return {"message": f"문서 '{filename}' 삭제 완료"}
+    except Exception as e:
+        print(f"❌ 문서 삭제 오류: {e}")
+        raise HTTPException(status_code=500, detail=f"문서 삭제 오류: {e}")
+
+@app.delete("/delete/file")
+async def delete_file(filename: str):
+    """📂 서버에서 파일 삭제"""
+    try:
+        collection_data_files.delete(where={"filename": filename})
+        print(f"🗑 파일 삭제 완료: {filename}")
+        return {"message": f"파일 '{filename}' 삭제 완료"}
+        
+    except Exception as e:
+        print(f"❌ 파일 삭제 오류: {e}")
+        raise HTTPException(status_code=500, detail=f"파일 삭제 오류: {e}")
     
 if __name__ == "__main__":
     import uvicorn

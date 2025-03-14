@@ -1,12 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 import Chat from "@/components/Chat";
 import List from "@/components/List"; // ✅ List 컴포넌트 추가
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [today, setToday] = useState<string>(""); 
+  const [facilityData, setFacilityData] = useState<any>(null); 
+
+  useEffect(() => {
+    const date = new Date().toISOString().split("T")[0];
+    setToday(date);
+
+    const fetchFacilityData = async () => {
+      try {
+        const response = await fetch(`http://localhost:7000/files`);
+        const data = await response.json();
+        setFacilityData(data);
+      } catch (error) {
+        console.error("❌ 스마트팜 데이터 불러오는 중 오류 발생:", error);
+      }
+    };
+
+    fetchFacilityData();
+  }, []);
+
   return (
     <div className={styles.page}>
       <div className={`${styles.sidebar} ${isSidebarOpen ? styles.open : ""}`}>

@@ -72,7 +72,7 @@ def process_data_file(file_content: bytes, file_ext: str):
     docs = []
     
     if file_ext == "csv":
-        df = pd.read_csv(io.common.BytesIO(file_content))
+        df = pd.read_csv(io.BytesIO(file_content))
     elif file_ext == "xlsx":
         df = pd.read_excel(io.BytesIO(file_content))
     elif file_ext == "json":
