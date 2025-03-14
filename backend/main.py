@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import chromadb
 from pydantic import BaseModel
-from services.ollama import query_olama
+from services.llm import query_olama
 from services.file import process_uploaded_file
 
 app = FastAPI()
@@ -28,13 +28,10 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    """📚 사용자가 RAG 버튼을 눌렀을 때만 RAG를 적용, 그렇지 않으면 일반 모델 응답"""
+    """📚 자동으로 질문 유형을 판단하여 응답"""
 
     print("💬 사용자 입력:", request.message)
-    print(f"🟢 RAG 사용 여부: {request.use_rag}")
-
-    response = await query_olama(request.message, use_rag=request.use_rag)
-
+    response = await query_olama(request.message)
     return {"response": response}
 
 @app.post("/upload")

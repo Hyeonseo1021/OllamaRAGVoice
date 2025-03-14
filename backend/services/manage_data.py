@@ -9,71 +9,131 @@ collection = chroma_client.get_or_create_collection(name="data_files")  # CSV/JS
 
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# ✅ 날짜 패턴 (예: "2025-03-04", "2월 15일", "어제", "오늘", "최근")
-DATE_PATTERN = r"(\d{4}-\d{2}-\d{2}|\d{1,2}월 \d{1,2}일|어제|오늘|최근)"
-
-# ✅ 업로드된 데이터셋의 컬럼명을 저장할 변수 (초기에는 비어 있음)
-DATASET_COLUMNS = set()
-
-def update_dataset_columns(new_columns):
-    """📌 새로운 데이터셋이 추가될 때 컬럼명을 자동 업데이트"""
-    global DATASET_COLUMNS
-    DATASET_COLUMNS.update(new_columns)
-
-def search_growth_data_in_chromadb(prompt: str, question_type: str) -> list:
+def extract_matching_columns(prompt: str, column_names: list) -> dict:
     """
-    📌 ChromaDB에서 사용자의 질문 유형을 기반으로 생육 데이터를 검색하여 반환
+    📌 사용자 질문에서 데이터의 열(column)과 값(value)을 추출하여 매칭
+    🔥 "농가 2" 같은 표현이 있으면, "농가"는 열, "2"는 값으로 설정
+    🔥 값이 없는 경우(None)는 해당 열이 존재하는지만 확인
+    """
+    matched_columns = {}
+
+    # ✅ 정규식을 이용하여 "농가 2" 같은 형태에서 숫자와 텍스트를 분리
+    word_number_pattern = re.findall(r"([가-힣A-Za-z]+)\s*([\d]+)", prompt)  # (단어, 숫자) 매칭
+
+    for word, number in word_number_pattern:
+        for col in column_names:
+            if word in col:  # 🔥 질문 속 키워드가 데이터 열과 매칭되면 추가
+                matched_columns[col] = number  # 🔥 숫자를 값(value)으로 설정
+
+    # ✅ 숫자가 없는 일반 키워드 처리
+    for col in column_names:
+        for word in prompt.split():
+            if word in col and col not in matched_columns:  # 🔥 기존에 매칭되지 않은 경우만 추가
+                matched_columns[col] = None
+
+    return matched_columns
+
+def convert_to_dict(raw_data):
+    """
+    📌 문자열 데이터를 JSON(dict) 형태로 변환
+    """
+    processed_data = []
+    for entry in raw_data:
+        data_dict = {}
+        for field in entry.split(", "):  # 각 필드 분리
+            key_value = field.split(": ")
+            if len(key_value) == 2:
+                key, value = key_value
+                data_dict[key.strip()] = value.strip()
+        processed_data.append(data_dict)
+    return processed_data
+
+def filter_growth_data(raw_data: list, prompt: str) -> list:
+    """
+    📌 사용자 질문에서 매칭된 열과 값으로 데이터 필터링
+    🔥 특정 열(예: "농가 2")이 있다면, 해당 열을 먼저 필터링하여 검색 범위 축소
+    🔥 값이 없는 경우(None)는 해당 열이 존재하는지만 확인
     """
     try:
-        # ✅ 사용자 질문을 벡터로 변환 후 검색
+        if not raw_data:
+            return []
+
+        # ✅ 문자열 데이터를 JSON(dict) 형태로 변환
+        processed_data = convert_to_dict(raw_data)
+        df = pd.DataFrame(processed_data)  # DataFrame 변환
+        column_names = df.columns.tolist()
+
+        # ✅ 사용자 질문에서 데이터와 매칭되는 열과 값 찾기
+        matching_filters = extract_matching_columns(prompt, column_names)
+        print(f"🔍 필터링 조건: {matching_filters}")
+
+        # ✅ 1️⃣ 특정한 값(예: "농가 2")이 있는 경우, 먼저 필터링하여 데이터 축소
+        for col, value in matching_filters.items():
+            if col in df.columns and value is not None:
+                df = df[df[col].astype(str) == value]  # 🔥 값이 있는 경우 정확한 매칭
+
+        # ✅ 2️⃣ 값이 None인 경우, 해당 열이 존재하는지만 확인
+        for col, value in matching_filters.items():
+            if col in df.columns and value is None:
+                df = df[df[col].notna()]
+
+        # ✅ 필터링 결과가 없는 경우 유사한 데이터 추천
+        if df.empty:
+            print("⚠ 정확한 데이터가 없음 → 유사한 데이터 추천")
+            return processed_data  # 원본 데이터를 반환하여 다른 조건으로 재검색 가능
+
+        return df.to_dict(orient="records")
+
+    except Exception as e:
+        print(f"❌ 데이터 필터링 오류: {e}")
+        return []
+
+def search_growth_data_in_chromadb(prompt: str) -> list:
+    """
+    📌 ChromaDB에서 데이터를 검색하기 전에 filter_growth_data를 먼저 실행하여,
+       필터링된 데이터가 충분하면 그대로 반환, 부족하면 추가 검색 수행
+    """
+    try:
+        # ✅ ChromaDB에서 전체 데이터 가져오기
+        raw_data = collection.get()["documents"]  # 전체 문서 리스트 가져오기
+        
+        # ✅ 먼저 필터링 실행 (질문과 연관된 데이터만 추출)
+        filtered_data = filter_growth_data(raw_data, prompt)
+
+        # ✅ 필터링된 데이터가 충분하면 바로 반환
+        if filtered_data and len(filtered_data) < 1000:  
+            print(f"✅ 필터링된 데이터 개수: {len(filtered_data)} → 직접 반환")
+            return filtered_data
+        
+        print("⚠ 필터링된 데이터가 부족하여 ChromaDB 검색 수행")
+
+        # ✅ ChromaDB에서 검색 수행 (필터링된 데이터가 너무 적을 때)
         query_embedding = embedding_model.encode(prompt).tolist()
+        
+        max_results = 500  # 초기 검색 개수
+        MAX_LIMIT = 10_000  # 최대 검색 개수
+        retrieved_docs = []
 
-        results = collection.query(
-            query_embeddings=[query_embedding],  # ✅ 임베딩된 질문을 사용
-            n_results=100  # ✅ 최상위 50개 결과 가져오기
-        )
+        while max_results <= MAX_LIMIT:
+            print(f"🔍 {max_results}개 검색 시도 중...")
 
-        retrieved_docs = results.get("documents", [[]])[0]
+            results = collection.query(
+                query_embeddings=[query_embedding],  
+                n_results=max_results
+            )
 
-        # ✅ 질문 유형이 CSV 관련이라면 숫자가 포함된 데이터만 반환 (정확한 데이터 검색)
-        if question_type == "DATA":
-            retrieved_docs = [doc for doc in retrieved_docs if any(char.isdigit() for char in doc)]
+            retrieved_docs = results.get("documents", [[]])[0]
+            print(f"📌 현재 검색된 데이터 개수: {len(retrieved_docs)}")
 
-        return retrieved_docs if retrieved_docs else []
+            if retrieved_docs:
+                return retrieved_docs  # 🔥 필터링 후 검색된 데이터 반환
+
+            print("❌ 검색된 데이터가 없음 → 검색 개수 증가 시도")
+            max_results *= 2  # ✅ 검색 개수 증가
+
+        print("⚠ 최대 검색 개수에 도달했지만 원하는 데이터를 찾지 못했습니다.")
+        return []
 
     except Exception as e:
         print(f"❌ ChromaDB 데이터 검색 오류: {e}")
         return []
-    
-def filter_growth_data(docs: list, prompt: str) -> str:
-    """
-    📌 검색된 생육 데이터에서 사용자 질문과 관련된 정보만 필터링 (컬럼명 자동 감지)
-    """
-
-    # ✅ 날짜 필터링 (날짜 관련 질문이면 적용)
-    date_match = re.search(DATE_PATTERN, prompt)
-    if date_match:
-        date_query = date_match.group(0)
-        docs = [doc for doc in docs if date_query in doc]
-
-    # ✅ "농가명 XX"이 포함된 경우 해당 농가 데이터만 필터링
-    farm_match = re.search(r"농가명\s*(\d+)", prompt)
-    if farm_match:
-        farm_id = farm_match.group(1)  # 예: "58"
-        docs = [doc for doc in docs if f"농가명: {farm_id}" in doc]
-
-    # ✅ 컬럼명 자동 필터링 (업로드된 데이터셋에서 필드명 추출)
-    relevant_docs = []
-    for doc in docs:
-        for column in DATASET_COLUMNS:  # ✅ 기존 하드코딩된 키워드 대신 데이터셋에서 자동 감지된 컬럼 사용
-            if column in prompt and column in doc:
-                relevant_docs.append(doc)
-                break  # 중복 저장 방지
-
-    # ✅ 최종 데이터 정리 (필터링된 데이터 반환)
-    if relevant_docs:
-        return "\n".join(relevant_docs)  # 📌 모든 검색된 데이터 반환
-    elif docs:
-        return "\n".join(docs)  # 📌 농가 필터링된 데이터 반환
-    else:
-        return "❌ 제공된 데이터에는 해당 농가에 대한 정보가 포함되지 않습니다."

@@ -117,22 +117,8 @@ export default function Chat() {
   return (
     <div className={`${styles.chatContainer} ${hasMessages ? styles.chatActive : ""}`}>
       <div className={styles.chatHeader}>
-          {!hasMessages && <h2>질문하세요</h2>}
-            {/* ✅ RAG 버튼을 제목 옆으로 이동 */}
-              <div className={styles.ragToggle}>
-                <span className={styles.toggleLabel}>
-                  {useRAG ? "📚 RAG" : "🧠 일반"}
-                </span>
-                <label className={styles.toggleSwitch}>
-                  <input
-                    type="checkbox"
-                    checked={useRAG}
-                    onChange={(e) => setUseRAG(e.target.checked)}
-                  />
-                  <span className={styles.slider}></span>
-                </label>
-              </div>
-        </div>
+          {!hasMessages && <h2>질문하세요</h2>}     
+      </div>
       {/* 채팅 기록 표시 */}
       <div className={`${styles.chatHistory} ${hasMessages ? styles.chatActive : ""}`}>
         {messages.map((msg, index) => (

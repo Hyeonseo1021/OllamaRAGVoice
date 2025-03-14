@@ -15,10 +15,10 @@ chroma_client = chromadb.HttpClient(host="localhost", port=8000)
 collection = chroma_client.get_or_create_collection(name="documents")
 
 # ✅ 1. 특정 질문에 대해서만 RAG 적용 여부 판단 
-def should_apply_rag(query: str, top_k_final: int = 20, threshold: float = 0.7):
-    """ 특정 질문에 대해 RAG 적용 여부 판단 (L2 Distance 정규화 + 유사도 변환 개선) """
+def should_apply_rag(query: str, top_k_final: int = 20, threshold: float = 0.5):
+    """ 특정 질문에 대해 RAG 적용 여부 판단 (L2 Distance → 유사도 변환 방식 개선) """
 
-    # ✅ L2 Distance 기반으로 정규화 없이 임베딩 생성
+    # ✅ L2 Distance 기반으로 임베딩 생성 (정규화 X)
     query_embedding = np.array(embedding_model.encode(query, normalize_embeddings=False))
 
     # ✅ ChromaDB에서 L2 Distance 기반 검색 수행
@@ -38,14 +38,9 @@ def should_apply_rag(query: str, top_k_final: int = 20, threshold: float = 0.7):
     all_docs = []
     print("\n🔍 검색된 문서 및 L2 Distance 점수:")
 
-    # ✅ L2 Distance 값 정규화: 최소/최대 거리 구해서 스케일링
-    min_dist = min(retrieved_scores) if retrieved_scores else 0
-    max_dist = max(retrieved_scores) if retrieved_scores else 1
-
     for doc, score, meta in zip(retrieved_docs, retrieved_scores, retrieved_metadata):
-        # ✅ 유사도 변환 방법 개선
-        similarity = 1 / (1 + score)  # ✅ L2 Distance 값이 낮을수록 높은 유사도 반환
-        similarity = (max_dist - score) / (max_dist - min_dist + 1e-9)  # ✅ Min-Max 정규화 추가
+        # ✅ 유사도 변환 (L2 Distance → 유사도 변환)
+        similarity = 1 / (1 + score)  # ✅ 올바른 유사도 변환 공식 유지
 
         print(f"📄 문서: {doc[:50]}... | 🔢 L2 Distance: {score:.4f} | 🔥 변환된 유사도: {similarity:.4f}")
 
@@ -64,7 +59,7 @@ def should_apply_rag(query: str, top_k_final: int = 20, threshold: float = 0.7):
     combined_context = "\n\n".join(doc for doc, _, _ in filtered_docs)
     print(f"\n✅ RAG 적용됨! (사용된 문서 개수: {len(filtered_docs)})")
     return True, combined_context
- 
+
 
 # ✅ 2. Google 검색 수행
 def search_web(query: str, num_results=2):
