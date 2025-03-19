@@ -1,89 +1,75 @@
 import chromadb
-import math
 import numpy as np
 from googlesearch import search
 import requests
 from bs4 import BeautifulSoup
-from numpy import clip
 from sentence_transformers import SentenceTransformer
+from langchain.tools import Tool
 
-# ✅ 모델을 벡터 저장할 때와 동일하게 설정
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-
-# 🔹 ChromaDB 클라이언트 설정
+# ✅ 1️⃣ ChromaDB 클라이언트 설정
 chroma_client = chromadb.HttpClient(host="localhost", port=8000)
 collection = chroma_client.get_or_create_collection(name="documents")
 
-# ✅ 1. 특정 질문에 대해서만 RAG 적용 여부 판단 
-def should_apply_rag(query: str, top_k_final: int = 20, threshold: float = 0.5):
-    """ 특정 질문에 대해 RAG 적용 여부 판단 (L2 Distance → 유사도 변환 방식 개선) """
+# ✅ 2️⃣ 임베딩 모델 (문서 검색용)
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-    # ✅ L2 Distance 기반으로 임베딩 생성 (정규화 X)
-    query_embedding = np.array(embedding_model.encode(query, normalize_embeddings=False))
-
-    # ✅ ChromaDB에서 L2 Distance 기반 검색 수행
-    results = collection.query(
-        query_embeddings=[query_embedding.tolist()],
-        n_results=50  # ✅ 검색된 문서 개수 증가
-    )
+# ✅ 3️⃣ ChromaDB에서 유사 문서 검색
+def search_rag_data(query: str, top_k_final: int = 20, threshold: float = 0.5):
+    """ ChromaDB에서 유사 문서 검색 후, 점수 기반 필터링 """
+    query_embedding = embedding_model.encode(query, normalize_embeddings=False)
+    results = collection.query(query_embeddings=[query_embedding.tolist()], n_results=50)
 
     retrieved_docs = results.get("documents", [[]])[0]
-    retrieved_scores = results.get("distances", [[]])[0]  # ✅ L2 Distance 값 가져오기
+    retrieved_scores = results.get("distances", [[]])[0]  # L2 Distance 값
     retrieved_metadata = results.get("metadatas", [[]])[0]
 
     if not retrieved_docs:
-        print("❌ 검색된 문서가 없음 → RAG 미적용")
-        return False, ""
+        return "❌ 관련 문서를 찾을 수 없습니다."
 
     all_docs = []
-    print("\n🔍 검색된 문서 및 L2 Distance 점수:")
-
     for doc, score, meta in zip(retrieved_docs, retrieved_scores, retrieved_metadata):
-        # ✅ 유사도 변환 (L2 Distance → 유사도 변환)
-        similarity = 1 / (1 + score)  # ✅ 올바른 유사도 변환 공식 유지
-
-        print(f"📄 문서: {doc[:50]}... | 🔢 L2 Distance: {score:.4f} | 🔥 변환된 유사도: {similarity:.4f}")
-
+        similarity = 1 / (1 + score)  # 유사도로 변환
         all_docs.append((doc, similarity, meta["filename"]))
 
-    # ✅ 유사도 높은 순서대로 정렬 후 top_k 개만 선택
+    # ✅ 유사도 높은 순 정렬 후 상위 문서만 반환
     all_docs = sorted(all_docs, key=lambda x: x[1], reverse=True)[:top_k_final]
-
-    # ✅ 상위 문서 중 threshold 이하인 문서만 필터링
     filtered_docs = [(doc, sim, meta) for doc, sim, meta in all_docs if sim >= threshold]
 
     if not filtered_docs:
-        print("❌ 유사한 문서 없음 → RAG 미적용")
-        return False, ""
+        # ✅ 유사도가 낮으면 웹 검색 실행
+        return search_web(query)
 
-    combined_context = "\n\n".join(doc for doc, _, _ in filtered_docs)
-    print(f"\n✅ RAG 적용됨! (사용된 문서 개수: {len(filtered_docs)})")
-    return True, combined_context
+    # ✅ 최종 문서 검색 결과를 `context`로 변환
+    formatted_docs = "\n\n".join([f"📄 문서: {meta}\n{doc}" for doc, _, meta in filtered_docs])
+    context =  f"📚 검색된 문서 데이터:\n{formatted_docs}"
+    return context
 
-
-# ✅ 2. Google 검색 수행
+# ✅ 4️⃣ Google 검색 실행
 def search_web(query: str, num_results=2):
-    """Google Search를 사용하여 검색 결과 가져오기"""
+    """ Google 검색을 수행하여 관련 웹 페이지 링크 가져오기 """
     try:
         search_results = list(search(query, num_results=num_results, lang="ko"))
-        return search_results
-    
+        if search_results:
+            return extract_text_from_url(search_results[0])  # ✅ 첫 번째 웹페이지 크롤링 후 반환
+        return "❌ 웹 검색 결과가 없습니다."
     except Exception as e:
-        print(f"❌ Error during Google Search: {e}")
-        return ["Error fetching search results."]
+        return f"❌ Google 검색 중 오류 발생: {e}"
 
-# ✅ 3. 웹페이지에서 주요 텍스트 크롤링
+# ✅ 5️⃣ 웹페이지 크롤링 기능
 def extract_text_from_url(url: str):
-    """웹페이지의 주요 내용을 크롤링하여 텍스트로 변환"""
+    """ 웹페이지 주요 텍스트 크롤링 """
     try:
         response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
         soup = BeautifulSoup(response.text, "html.parser")
-
-        paragraphs = soup.find_all("p")  # 주요 문서 내용 추출
+        paragraphs = soup.find_all("p")
         extracted_text = " ".join([p.get_text() for p in paragraphs])
-
-        return extracted_text[:1000]  # LLM 입력을 고려하여 최대 길이 제한\
-    
+        return f"🌍 [출처: {url}]\n" + extracted_text[:1000]  # 최대 길이 제한
     except Exception as e:
-        print(f"❌ Error extracting text from {url}: {e}")
-        return None
+        return f"❌ {url} 크롤링 중 오류 발생: {e}"
+
+# ✅ 6️⃣ LangChain 기반 RAG Agent 정의
+rag_agent = Tool(
+    name="SmartFarmRAGAgent",
+    func=search_rag_data,
+    description="스마트팜 운영 관련 문서를 검색하고, 필요하면 웹에서 정보를 가져옵니다."
+)

@@ -4,18 +4,17 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import styles from "../styles/Chat.module.css";
 
-export default function Chat() {
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+export default function Chat({ onGraphGenerated }: { onGraphGenerated?: (graphData: string) => void }) {
+  const [messages, setMessages] = useState<{ role: string; content: string; graph?: string }[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isListening, setIsListening] = useState(false); // STT 상태
-  const [recognition, setRecognition] = useState<any | null>(null); // STT 객체 상태
-  const [file, setFile] = useState<File | null>(null); // 파일 상태
-  const [isUploading, setIsUploading] = useState(false);
-  const [useRAG, setUseRAG] = useState(false); // ✅ RAG 버튼 상태 추가
-  const [hasMessages, setHasMessages] = useState(false); // 채팅 시작 여부 상태 추가
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState<any | null>(null);
+  const [useRAG, setUseRAG] = useState(false);
+  const [hasMessages, setHasMessages] = useState(false);
+  const [file, setFile] = useState<File | null>(null); // ✅ 파일 상태 추가
+  const [isUploading, setIsUploading] = useState(false); // ✅ 파일 업로드 상태
 
-  // ✅ STT 초기화 (Web Speech API)
   useEffect(() => {
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
       const SpeechRecognition =
@@ -26,7 +25,7 @@ export default function Chat() {
 
       recog.onstart = () => setIsListening(true);
       recog.onend = () => setIsListening(false);
-      recog.onresult = (event: any) => setInput(event.results[0][0].transcript); // STT 결과
+      recog.onresult = (event: any) => setInput(event.results[0][0].transcript);
 
       setRecognition(recog);
     } else {
@@ -34,7 +33,6 @@ export default function Chat() {
     }
   }, []);
 
-  // ✅ TTS (Text-to-Speech) 함수
   const speak = (text: string) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
@@ -52,7 +50,6 @@ export default function Chat() {
     if (!hasMessages) setHasMessages(true);
 
     const newMessages = [...messages, { role: "user", content: input }];
-    
     setMessages(newMessages);
     setInput("");
     setIsLoading(true);
@@ -63,12 +60,24 @@ export default function Chat() {
         use_rag: useRAG
       });
 
-      const updatedMessages = [
-        ...newMessages,
-        { role: "assistant", content: response.data.response },
-      ];
-      setMessages(updatedMessages);
-      speak(response.data.response); // TTS로 챗봇 응답 읽어주기
+      if (response.data.graph) {
+        setMessages([
+          ...newMessages,
+          { role: "assistant", content: response.data.response, graph: response.data.graph }
+        ]);
+
+        // ✅ 그래프 데이터를 부모(Home.tsx)로 전달하여 표시
+        if (onGraphGenerated) {
+          onGraphGenerated(response.data.graph);
+        }
+      } else {
+        setMessages([
+          ...newMessages,
+          { role: "assistant", content: response.data.response }
+        ]);
+      }
+
+      speak(response.data.response);
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
@@ -85,18 +94,11 @@ export default function Chat() {
     }
   };
 
-  // ✅ 파일 상태가 업데이트되면 자동 업로드 실행
-  useEffect(() => {
-    if (file) {
-      uploadFile();
-    }
-  }, [file]);
-
-  // ✅ 파일 업로드 함수
+  // ✅ 파일 업로드 함수 (유지)
   const uploadFile = async () => {
-    if (!file) return; // ✅ 여기서 파일이 null이면 실행되지 않음
+    if (!file) return;
 
-    setIsUploading(true); // ✅ 업로드 중 상태 활성화
+    setIsUploading(true);
     const formData = new FormData();
     formData.append("file", file);
 
@@ -105,20 +107,27 @@ export default function Chat() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert(response.data.message); // ✅ 업로드 완료 메시지
-      setFile(null); // ✅ 파일 상태 초기화
+      alert(response.data.message);
+      setFile(null);
     } catch (error) {
       console.error("파일 업로드 오류:", error);
     } finally {
-      setIsUploading(false); // ✅ 업로드 상태 해제
+      setIsUploading(false);
     }
   };
+
+  useEffect(() => {
+    if (file) {
+      uploadFile();
+    }
+  }, [file]);
 
   return (
     <div className={`${styles.chatContainer} ${hasMessages ? styles.chatActive : ""}`}>
       <div className={styles.chatHeader}>
           {!hasMessages && <h2>질문하세요</h2>}     
       </div>
+      
       {/* 채팅 기록 표시 */}
       <div className={`${styles.chatHistory} ${hasMessages ? styles.chatActive : ""}`}>
         {messages.map((msg, index) => (
@@ -129,6 +138,14 @@ export default function Chat() {
             }`}
           >
             <strong>{msg.role === "user" ? "You" : "Bot"}:</strong> {msg.content}
+            {/* ✅ CrewAI가 반환한 그래프가 있으면 자동 출력 */}
+            {msg.graph && (
+              <img
+                src={`data:image/png;base64,${msg.graph}`}
+                alt="Generated Graph"
+                className={styles.graphImage}
+              />
+            )}
           </div>
         ))}
         {isLoading && <div className={styles.loadingMessage}>⏳ 응답 생성 중...</div>}
@@ -136,7 +153,7 @@ export default function Chat() {
         
       {/* 입력 및 버튼 영역 */}
       <div className={`${styles.inputContainer} ${hasMessages ? styles.inputFixed : styles.inputCenter}`}>
-        {/* ✅ 파일 업로드 */}
+        {/* ✅ 파일 업로드 UI 유지 */}
         <div className={styles.uploadContainer}>
           <label htmlFor="file-upload" className={styles.fileLabel}>📂 파일 선택</label>
           <input
@@ -144,11 +161,11 @@ export default function Chat() {
             type="file"
             onChange={(e) => {
               const selectedFile = e.target.files?.[0] || null;
-              setFile(selectedFile); // ✅ 상태만 업데이트 (즉시 업로드 X)
+              setFile(selectedFile);
             }}
             className={styles.fileInput}
           />
-          {isUploading && <p className={styles.uploadMessage}>⏳ 파일 업로드 중...</p>} {/* ✅ 업로드 중 로딩 표시 */}
+          {isUploading && <p className={styles.uploadMessage}>⏳ 파일 업로드 중...</p>}
         </div>
 
         <input
@@ -171,8 +188,6 @@ export default function Chat() {
           {isListening ? "Listening..." : "🎙️"}
         </button>
       </div>
-
-        
     </div>
   );
 }

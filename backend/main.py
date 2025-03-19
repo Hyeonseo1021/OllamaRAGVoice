@@ -5,6 +5,7 @@ import chromadb
 from pydantic import BaseModel
 from services.llm import query_olama
 from services.file import process_uploaded_file
+from services.today_data import get_today_data
 
 app = FastAPI()
 
@@ -24,14 +25,18 @@ collection_data_files = chroma_client.get_or_create_collection(name="data_files"
 
 class ChatRequest(BaseModel):
     message: str
-    use_rag: bool  # ✅ RAG 버튼 여부 추가
-
+    
 @app.post("/chat")
 async def chat(request: ChatRequest):
     """📚 자동으로 질문 유형을 판단하여 응답"""
-
+    
     print("💬 사용자 입력:", request.message)
+    
+    # ✅ 비동기 함수이므로 `await` 사용하여 호출
     response = await query_olama(request.message)
+    
+    print("✅ query_olama 실행 완료", flush=True)
+    
     return {"response": response}
 
 @app.post("/upload")
@@ -99,6 +104,12 @@ async def delete_file(filename: str):
     except Exception as e:
         print(f"❌ 파일 삭제 오류: {e}")
         raise HTTPException(status_code=500, detail=f"파일 삭제 오류: {e}")
+
+# ✅ API 엔드포인트 (오늘 날짜 데이터 반환)
+@app.get("/today")
+async def today_data_api():
+    """ChromaDB에서 오늘 날짜 데이터 반환"""
+    return get_today_data()
     
 if __name__ == "__main__":
     import uvicorn

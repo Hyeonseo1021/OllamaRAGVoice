@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "../styles/list.module.css"; // ✅ 새로운 CSS 파일 불러오기
+import styles from "../styles/List.module.css";
 
 export default function List() {
   const [documents, setDocuments] = useState<string[]>([]);
