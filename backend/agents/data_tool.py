@@ -3,7 +3,7 @@ import re
 import pandas as pd
 from langchain.tools import Tool
 from sentence_transformers import SentenceTransformer
-from services.today_data import get_today_data  # ✅ 오늘 날짜 데이터 가져오는 함수 불러오기
+from data.today_data import get_today_data  # ✅ 오늘 날짜 데이터 가져오는 함수 불러오기
 
 # ✅ 1️⃣ ChromaDB 설정
 chroma_client = chromadb.HttpClient(host="localhost", port=8000)
@@ -83,6 +83,7 @@ def query_smartfarm_data(prompt: str) -> str:
     results = search_growth_data_in_chromadb(prompt)
     context = f"📊 검색된 데이터:\n{results}" if results else "❌ 관련 데이터를 찾을 수 없습니다."
     return context
+
 data_agent = Tool(
     name="SmartFarmDataAgent",
     func=query_smartfarm_data,

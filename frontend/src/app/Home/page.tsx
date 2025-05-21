@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import styles from "./page.module.css";
 import Chat from "@/components/Chat";
 import List from "@/components/List";
@@ -32,7 +33,9 @@ export default function Home() {
   return (
     
     <div className={styles.page}>
-
+      <div className={styles.topRightNav}>
+        <Link href="/" className={styles.homeLink}>🏠 홈으로</Link>
+      </div>
       <div className={`${styles.sidebar} ${isSidebarOpen ? styles.open : ""}`}>
         <button className={styles.sidebarToggle} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
           {isSidebarOpen ? "⬅" : "📄"}
@@ -51,7 +54,7 @@ export default function Home() {
           <Chat />
         </div>
       </div>
-
+ 
       <div className={styles.todayDataContainer}>
         <h2 className="text-xl font-bold">📊 오늘의 데이터</h2>
         {todayData.length > 0 ? (

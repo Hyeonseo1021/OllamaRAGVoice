@@ -4,10 +4,10 @@ from langchain.agents import initialize_agent, AgentType
 from langchain.tools import Tool
 from langchain_ollama import OllamaLLM  # ✅ LangChain Ollama 지원 LLM 추가
 from langchain.prompts import PromptTemplate
-from services.question import classify_question_type
-from services.manage_data import data_agent
-from services.rag import rag_agent
-from services.both import both_agent
+from core.classifier import classify_question_type
+from agents.data_tool import data_agent
+from agents.rag_tool import rag_agent
+from agents.both_tool import both_agent
 
 # ✅ 1️⃣ Ollama LangChain LLM 설정 (stop_sequences 추가)
 llm = OllamaLLM(
@@ -34,6 +34,17 @@ prompt_template = PromptTemplate(
 
     ### Intermediate Steps:
     {intermediate_steps}
+
+    ### Tool Selection Instructions:
+    - Use **SmartFarmDataAgent** ONLY for sensor-related queries such as:
+      - temperature, humidity, CO₂ levels, light intensity, nutrient concentration, real-time readings
+
+    - Use **SmartFarmRAGAgent** for knowledge-based queries such as:
+      - crop varieties (e.g., 딸기 품종), cultivation methods, pest and disease information, general farming techniques, definitions, terminology
+
+    - Use **SmartFarmBOTHAgent** if the question asks to compare:
+      - real-time data with standards or recommendations in documents
+      - sensor data vs document data
 
     ### Execution Instructions:
     - **After "Thought:", you must include "Action:".**
@@ -91,11 +102,11 @@ async def query_olama(prompt: str) -> str:
         else:
             print("⚡ LangChain Agent 실행 중...")
             result = agent_executor.invoke({"input": prompt}) # ✅ `invoke()` 사용
-            # ✅ Observation 데이터가 있으면 바로 context에 저장
-            if "Observation" in result and result["Observation"]:
-                context = result["Observation"]
+           
+            if isinstance(result, dict) and "output" in result:
+                context = result["output"]
             else:
-                context = result["output"] 
+                context = str(result)
             print(f"✅결과: {context[:200]}")  # 로그 출력 시 길이 제한
              
 

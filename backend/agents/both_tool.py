@@ -1,5 +1,5 @@
-from services.manage_data import data_agent  # 센서 데이터 Agent
-from services.rag import rag_agent  # 문서 검색 Agent
+from agents.data_tool import data_agent  # 센서 데이터 Agent
+from agents.rag_tool import rag_agent  # 문서 검색 Agent
 from langchain.tools import Tool
 
 # ✅ 1️⃣ BOTH 유형 분석 함수

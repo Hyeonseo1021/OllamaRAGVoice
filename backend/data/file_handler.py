@@ -2,7 +2,7 @@ import pandas as pd
 import json
 import io
 from fastapi import UploadFile, HTTPException
-from .extraction import extract_text, calculate_file_hash
+from core.extraction import extract_text, calculate_file_hash
 from langchain.text_splitter import CharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 

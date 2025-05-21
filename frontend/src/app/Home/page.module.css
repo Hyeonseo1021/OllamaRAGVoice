@@ -19,6 +19,31 @@
     background: linear-gradient(to bottom, #c7e2ce, #b0f3a7); /* ✅ 부드러운 배경 */
   }
   
+
+.topRightNav {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+}
+
+.homeLink {
+  background-color: #ffffff;
+  color: #111827;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.homeLink:hover {
+  background-color: #e5e7eb;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+
   /* 🌟 메인 컨텐츠 중앙 정렬 */
   .main {
     display: flex;

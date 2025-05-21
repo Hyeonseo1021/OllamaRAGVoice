@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import chromadb
 from pydantic import BaseModel
-from services.llm import query_olama
-from services.file import process_uploaded_file
-from services.today_data import get_today_data
+from agents.llm_agent import query_olama
+from data.file_handler import process_uploaded_file
+from data.today_data import get_today_data
 
 app = FastAPI()
 
