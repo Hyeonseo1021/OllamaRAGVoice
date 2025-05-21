@@ -84,8 +84,8 @@ def query_smartfarm_data(prompt: str) -> str:
     context = f"📊 검색된 데이터:\n{results}" if results else "❌ 관련 데이터를 찾을 수 없습니다."
     return context
 
-data_agent = Tool(
-    name="SmartFarmDataAgent",
+data_tool = Tool(
+    name="SmartFarmData",
     func=query_smartfarm_data,
     description="스마트팜 센서 데이터 조회 및 분석"
 )

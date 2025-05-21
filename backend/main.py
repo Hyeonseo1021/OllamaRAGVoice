@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import chromadb
 from pydantic import BaseModel
-from agents.llm_agent import query_olama
+from agents.agent import query_dual_agent
 from data.file_handler import process_uploaded_file
 from data.today_data import get_today_data
 
@@ -33,7 +33,7 @@ async def chat(request: ChatRequest):
     print("💬 사용자 입력:", request.message)
     
     # ✅ 비동기 함수이므로 `await` 사용하여 호출
-    response = await query_olama(request.message)
+    response = await query_dual_agent(request.message)
     
     print("✅ query_olama 실행 완료", flush=True)
     

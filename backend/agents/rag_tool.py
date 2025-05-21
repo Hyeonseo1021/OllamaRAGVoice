@@ -1,9 +1,10 @@
 import chromadb
 import numpy as np
+import re
 from googlesearch import search
 import requests
 from bs4 import BeautifulSoup
-from sentence_transformers import SentenceTransformer
+from langchain.embeddings import HuggingFaceEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
 from langchain.tools import Tool
 
@@ -12,50 +13,67 @@ chroma_client = chromadb.HttpClient(host="localhost", port=8000)
 collection = chroma_client.get_or_create_collection(name="documents")
 
 # ✅ 2️⃣ 임베딩 모델 (문서 검색용)
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+embedding_model = HuggingFaceEmbeddings(
+    model_name="BAAI/bge-m3",
+    encode_kwargs={"normalize_embeddings": True}
+)
 
 # ✅ 3️⃣ ChromaDB에서 유사 문서 검색
-def search_rag_data(query: str, top_k_final: int = 20, threshold: float = 0.75):
-    """ ChromaDB에서 유사 문서 검색 후, cosine similarity 기반 필터링 """
-    
-    # ✅ 임베딩 생성 (정규화하여 cosine similarity에 적합하게)
-    query_embedding = embedding_model.encode([query], normalize_embeddings=True)
+def search_rag_data(query: str, top_k_final: int = 20, threshold: float = 0.5, min_docs: int = 3):
+    """ 🔍 개선된 RAG 문서 검색: cosine 유사도 기반 + 보조 필터 + 최소 확보 """
 
-    # ✅ 문서 검색 및 임베딩 포함 요청
+    # ✅ 1. cosine similarity 기반 임베딩 생성
+    query_embedding = embedding_model.embed_query(query)  # 이미 정규화됨
     results = collection.query(
-        query_embeddings=query_embedding.tolist(),
-        n_results=50,
-        include=["documents", "embeddings", "metadatas"]
+        query_embeddings=[query_embedding],
+        n_results=top_k_final * 2,  # 후보 넉넉히 확보
+        include=["documents", "metadatas", "distances"]
     )
 
     retrieved_docs = results.get("documents", [[]])[0]
-    retrieved_embeddings = results.get("embeddings", [[]])[0]
+    retrieved_scores = results.get("distances", [[]])[0]
     retrieved_metadata = results.get("metadatas", [[]])[0]
 
     if not retrieved_docs:
+        print("❌ No documents retrieved.")
         return "❌ 관련 문서를 찾을 수 없습니다."
 
-    # ✅ cosine similarity 계산
-    similarities = cosine_similarity([query_embedding[0]], retrieved_embeddings)[0]
+    # ✅ 2. cosine 유사도 계산 (score는 distance가 아니라 similarity)
+    all_docs = []
+    for doc, dist, meta in zip(retrieved_docs, retrieved_scores, retrieved_metadata):
+        similarity = 1 - dist  # cosine distance → similarity
+        all_docs.append((doc, similarity, meta["filename"]))
 
-    # ✅ 유사도 기준으로 정렬
-    all_docs = list(zip(retrieved_docs, similarities, retrieved_metadata))
-    all_docs = sorted(all_docs, key=lambda x: x[1], reverse=True)[:top_k_final]
+    # ✅ 3. threshold 필터 및 유사도 정렬
+    sorted_docs = sorted(all_docs, key=lambda x: x[1], reverse=True)
+    filtered_docs = [(doc, sim, meta) for doc, sim, meta in sorted_docs if sim >= threshold]
 
-    # ✅ 유사도 기준 필터링
-    filtered_docs = [(doc, sim, meta["filename"]) for doc, sim, meta in all_docs if sim >= threshold]
+    # ✅ 4. 키워드 보조 필터 (보완용)
+    keywords = [kw for kw in re.findall(r"\b\w{2,}\b", query)]
+    seen_meta = set(meta for _, _, meta in filtered_docs)
 
-    # ✅ 디버깅용 로그 출력 (옵션)
-    for doc, sim, meta in filtered_docs:
-        print(f"[유사도: {sim:.3f}] 문서: {meta}\n미리보기: {doc[:200]}\n")
+    for doc, sim, meta in sorted_docs:
+        if len(filtered_docs) >= top_k_final:
+            break
+        if meta not in seen_meta and any(kw.lower() in doc.lower() for kw in keywords):
+            print(f"📌 키워드 기반 보조 포함: {meta}")
+            filtered_docs.append((doc, sim, meta))
+            seen_meta.add(meta)
+
+    # ✅ 5. 최소 확보 보장
+    for doc, sim, meta in sorted_docs:
+        if len(filtered_docs) >= min_docs:
+            break
+        if meta not in seen_meta:
+            filtered_docs.append((doc, sim, meta))
+            seen_meta.add(meta)
 
     if not filtered_docs:
         return search_web(query)
 
-    # ✅ 결과 구성
+    # ✅ 6. 출력 정리
     formatted_docs = "\n\n".join([f"📄 문서: {meta}\n{doc}" for doc, _, meta in filtered_docs])
-    context = f"📚 검색된 문서 데이터:\n{formatted_docs}"
-    return context
+    return f"📚 검색된 문서 데이터:\n{formatted_docs}"
 
 # ✅ 4️⃣ Google 검색 실행
 def search_web(query: str, num_results=2):
@@ -76,13 +94,13 @@ def extract_text_from_url(url: str):
         soup = BeautifulSoup(response.text, "html.parser")
         paragraphs = soup.find_all("p")
         extracted_text = " ".join([p.get_text() for p in paragraphs])
-        return f"🌍 [출처: {url}]\n" + extracted_text[:1000]  # 최대 길이 제한
+        return f"🌍 [출처: {url}]\n" + extracted_text[:5000]  
     except Exception as e:
         return f"❌ {url} 크롤링 중 오류 발생: {e}"
 
 # ✅ 6️⃣ LangChain 기반 RAG Agent 정의
-rag_agent = Tool(
-    name="SmartFarmRAGAgent",
+rag_tool = Tool(
+    name="SmartFarmRAG",
     func=search_rag_data,
     description="작물 품종, 병해충, 재배 방법 등 농업 지식에 대한 문서를 검색합니다."
 )
